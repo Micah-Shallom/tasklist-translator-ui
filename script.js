@@ -7,7 +7,7 @@ let selectedSteps = [];
 let lastTranslationResponse = null;
 
 // Base URL - modify this to match your API
-const BASE_URL = 'http://localhost:8080/api/v1'; // Change this to your API URL
+const BASE_URL = 'http://localhost:8019/api/v1'; // Change this to your API URL
 
 // Tab functionality
 document.addEventListener('DOMContentLoaded', function() {
@@ -147,6 +147,9 @@ function renderSkills(type) {
 
 // Pipeline steps functions
 async function loadPipelineSteps() {
+    const loadingIndicator = document.getElementById('pipelineLoading');
+    loadingIndicator.style.display = 'flex';
+    
     try {
         const response = await fetch(`${BASE_URL}/prompts/steps`);
         const data = await response.json();
@@ -156,18 +159,57 @@ async function loadPipelineSteps() {
             renderPipelineSteps();
         } else {
             console.error('Failed to load pipeline steps:', data.message);
+            // Show error message to user
+            const container = document.getElementById('pipelineSteps');
+            container.innerHTML = `<div style="padding: 20px; text-align: center; color: #dc3545;">Failed to load steps: ${data.message}</div>`;
         }
     } catch (error) {
         console.error('Error loading pipeline steps:', error);
+        // Show error message to user
+        const container = document.getElementById('pipelineSteps');
+        container.innerHTML = `<div style="padding: 20px; text-align: center; color: #dc3545;">Error loading steps. Please check your connection and try again.</div>`;
+    } finally {
+        // Hide loading indicator
+        loadingIndicator.style.display = 'none';
     }
-    
-    // Hide loading indicator
-    document.getElementById('pipelineLoading').style.display = 'none';
+}
+
+// Function to refresh pipeline steps
+function refreshPipelineSteps() {
+    // Clear current selections when refreshing
+    selectedSteps = [];
+    loadPipelineSteps();
+    renderPipelineOrder();
 }
 
 function renderPipelineSteps() {
     const container = document.getElementById('pipelineSteps');
-    container.innerHTML = '';
+    
+    // Create refresh button and steps container
+    container.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h4>Available Pipeline Steps</h4>
+            <button onclick="refreshPipelineSteps()" style="
+                padding: 8px 16px; 
+                background: #28a745; 
+                color: white; 
+                border: none; 
+                border-radius: 4px; 
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+            ">
+                <span style="font-size: 16px;">🔄</span> Refresh Steps
+            </button>
+        </div>
+        <div id="stepsGrid"></div>
+    `;
+    
+    const stepsGrid = document.getElementById('stepsGrid');
+    stepsGrid.style.display = 'grid';
+    stepsGrid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(250px, 1fr))';
+    stepsGrid.style.gap = '15px';
     
     availableSteps.forEach(step => {
         const stepCard = document.createElement('div');
@@ -184,7 +226,7 @@ function renderPipelineSteps() {
             <p>Created: ${new Date(step.created_at).toLocaleDateString()}</p>
         `;
         
-        container.appendChild(stepCard);
+        stepsGrid.appendChild(stepCard);
     });
 }
 
@@ -275,14 +317,16 @@ async function performTranslation() {
     loadingOverlay.style.display = 'flex';
     allInputsAndButtons.forEach(el => el.disabled = true);
 
-
     try {
+        // Prepare request body with correct structure
         const requestBody = {
-            task_lists: tasks.filter(t => t.trim()),
+            task_lists: tasks.filter(t => t.trim()), // Filter out empty tasks
             agent_skills: agentSkills,
             global_skills: globalSkills,
-            steps: selectedSteps.map(s => s.id)
+            steps: selectedSteps.map(s => s.id) // Extract step IDs
         };
+
+        console.log('Sending translation request:', requestBody);
 
         const response = await fetch(`${BASE_URL}/translator`, {
             method: 'POST',
@@ -295,8 +339,11 @@ async function performTranslation() {
         const result = await response.json();
         lastTranslationResponse = result;
 
+        console.log('Translation response:', result);
+
         if (response.ok && result.status === 'success') {
             renderResults(result.data);
+            // Automatically switch to results tab
             document.querySelector('.tab-btn[data-tab="results"]').click();
         } else {
             const error = result.message || 'An unknown error occurred.';
@@ -340,7 +387,7 @@ function renderResults(data) {
     }
 
     // Render each step
-    data.process_step.forEach(step => {
+    data.process_step.forEach((step, index) => {
         const stepEl = document.createElement('div');
         stepEl.className = 'step-result';
 
@@ -348,18 +395,30 @@ function renderResults(data) {
 
         stepEl.innerHTML = `
             <div class="step-header">
-                <span>${ escapeHtml(step.step) }</span>
-                <span class="status-indicator ${stepStatusClass}">${ escapeHtml(step.status) }</span>
+                <span>${escapeHtml(step.step)}</span>
+                <span class="status-indicator ${stepStatusClass}">${escapeHtml(step.status)}</span>
             </div>
             <div class="step-content">
                 <div class="step-field">
                     <label>Input</label>
-                    <div class="content">${ step.input ? `<pre>${escapeHtml(step.input)}</pre>` : 'N/A' }</div>
+                    <div class="content">${step.input ? `<pre>${escapeHtml(step.input)}</pre>` : '<span style="color: #6c757d; font-style: italic;">No input provided</span>'}</div>
                 </div>
                 <div class="step-field">
                     <label>Output</label>
-                    <div class="content">${ step.output ? `<pre>${escapeHtml(step.output)}</pre>` : 'N/A' }</div>
+                    <div class="content">${step.output ? `<pre>${escapeHtml(step.output)}</pre>` : '<span style="color: #6c757d; font-style: italic;">No output generated</span>'}</div>
                 </div>
+                ${step.prompt ? `
+                <div class="step-field">
+                    <label>Prompt</label>
+                    <div class="content"><pre>${escapeHtml(step.prompt)}</pre></div>
+                </div>
+                ` : ''}
+                ${step.llm_call !== undefined ? `
+                <div class="step-field">
+                    <label>LLM Call</label>
+                    <div class="content">${step.llm_call ? 'Yes' : 'No'}</div>
+                </div>
+                ` : ''}
             </div>
         `;
         processStepsContainer.appendChild(stepEl);
@@ -368,16 +427,15 @@ function renderResults(data) {
 
 function escapeHtml(unsafe) {
     if (typeof unsafe !== 'string') {
-        // if the value is not a string, we can't escape it, so we just return it as is.
-        // this is not ideal, but for now it will prevent the app from crashing.
-        return unsafe;
+        // Convert to string if it's not already
+        return String(unsafe);
     }
     return unsafe
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
 function copyResults() {
@@ -385,6 +443,7 @@ function copyResults() {
         alert('No results to copy.');
         return;
     }
+    
     navigator.clipboard.writeText(JSON.stringify(lastTranslationResponse, null, 2))
         .then(() => {
             alert('Full response copied to clipboard!');
