@@ -263,6 +263,48 @@ body {
     margin-bottom: 30px;
 }
 
+
+.pipeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.refresh-steps-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.refresh-steps-btn:hover {
+    background: #218838;
+    transform: translateY(-1px);
+}
+
+.refresh-steps-btn:active {
+    transform: translateY(0);
+}
+
+.refresh-icon {
+    font-size: 1.1rem;
+    animation: none;
+    transition: transform 0.3s ease;
+}
+
+.refresh-steps-btn:hover .refresh-icon {
+    transform: rotate(180deg);
+}
+
 .step-card {
     border: 2px solid #dee2e6;
     border-radius: 8px;

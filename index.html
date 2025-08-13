@@ -52,10 +52,10 @@
                     <div class="skills-section">
                         <label>Agent Skills:</label>
                         <div class="skills-input-group">
-                            <div class="skills-input">
+                            <!-- <div class="skills-input">
                                 <input type="text" id="agentSkillInput" placeholder="Enter skill...">
                                 <button class="add-skill-btn" onclick="addSkill('agent')">Add</button>
-                            </div>
+                            </div> -->
                             <div class="bulk-input-container">
                                 <textarea id="agentSkillsBulk" placeholder="Paste multiple skills (one per line)..." rows="3"></textarea>
                                 <button class="bulk-add-btn" onclick="addSkillsBulk('agent')">Add All</button>
@@ -68,10 +68,10 @@
                     <div class="skills-section">
                         <label>Global Skills:</label>
                         <div class="skills-input-group">
-                            <div class="skills-input">
+                            <!-- <div class="skills-input">
                                 <input type="text" id="globalSkillInput" placeholder="Enter skill...">
                                 <button class="add-skill-btn" onclick="addSkill('global')">Add</button>
-                            </div>
+                            </div> -->
                             <div class="bulk-input-container">
                                 <textarea id="globalSkillsBulk" placeholder="Paste multiple skills (one per line)..." rows="3"></textarea>
                                 <button class="bulk-add-btn" onclick="addSkillsBulk('global')">Add All</button>
@@ -85,7 +85,13 @@
             <!-- Pipeline Tab -->
             <div class="tab-content" id="pipeline-tab">
                 <div class="pipeline-section">
-                    <h3>⚙️ Pipeline Steps Configuration</h3>
+                    <div class="pipeline-header">
+                        <h3>⚙️ Pipeline Steps Configuration</h3>
+                        <button class="refresh-steps-btn" onclick="refreshPipelineSteps()" title="Refresh Pipeline Steps">
+                            <span class="refresh-icon">♻️</span>
+                            Refresh Steps
+                        </button>
+                    </div>
                     <p>Select and order the steps for your translation pipeline. Steps will execute in the order shown below:</p>
                     
                     <div class="pipeline-loading" id="pipelineLoading">

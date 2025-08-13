@@ -97,7 +97,7 @@ function addSkill(type) {
         } else {
             globalSkills.push(skill);
         }
-        
+         
         input.value = '';
         renderSkills(type);
     }
@@ -182,29 +182,12 @@ function refreshPipelineSteps() {
     renderPipelineOrder();
 }
 
+// Update the renderPipelineSteps function in script.js
 function renderPipelineSteps() {
     const container = document.getElementById('pipelineSteps');
     
-    // Create refresh button and steps container
-    container.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h4>Available Pipeline Steps</h4>
-            <button onclick="refreshPipelineSteps()" style="
-                padding: 8px 16px; 
-                background: #28a745; 
-                color: white; 
-                border: none; 
-                border-radius: 4px; 
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                gap: 5px;
-            ">
-                <span style="font-size: 16px;">🔄</span> Refresh Steps
-            </button>
-        </div>
-        <div id="stepsGrid"></div>
-    `;
+    // Create steps container without the old refresh button
+    container.innerHTML = `<div id="stepsGrid"></div>`;
     
     const stepsGrid = document.getElementById('stepsGrid');
     stepsGrid.style.display = 'grid';
@@ -228,6 +211,49 @@ function renderPipelineSteps() {
         
         stepsGrid.appendChild(stepCard);
     });
+}
+
+// Update the refreshPipelineSteps function to show loading state on button
+async function refreshPipelineSteps() {
+    const refreshBtn = document.querySelector('.refresh-steps-btn');
+    const refreshIcon = document.querySelector('.refresh-icon');
+    const loadingIndicator = document.getElementById('pipelineLoading');
+    
+    // Show loading state
+    refreshBtn.disabled = true;
+    refreshIcon.style.animation = 'spin 1s linear infinite';
+    loadingIndicator.style.display = 'flex';
+    
+    // Clear current selections when refreshing
+    selectedSteps = [];
+    
+    try {
+        const response = await fetch(`${BASE_URL}/prompts/steps`);
+        const data = await response.json();
+        console.log(data)
+        
+        if (data.status === 'success') {
+            availableSteps = data.data;
+            renderPipelineSteps();
+        } else {
+            console.error('Failed to load pipeline steps:', data.message);
+            // Show error message to user
+            const container = document.getElementById('pipelineSteps');
+            container.innerHTML = `<div style="padding: 20px; text-align: center; color: #dc3545;">Failed to refresh steps: ${data.message}</div>`;
+        }
+    } catch (error) {
+        // console.error('Error refreshing pipeline steps:', error);
+        // // Show error message to user
+        // const container = document.getElementById('pipelineSteps');
+        // container.innerHTML = `<div style="padding: 20px; text-align: center; color: #dc3545;">Error refreshing steps. Please check your connection and try again.</div>`;
+    } finally {
+        // Restore button state and hide loading
+        refreshBtn.disabled = false;
+        refreshIcon.style.animation = 'none';
+        loadingIndicator.style.display = 'none';
+    }
+    
+    renderPipelineOrder();
 }
 
 function toggleStep(step) {
@@ -320,10 +346,10 @@ async function performTranslation() {
     try {
         // Prepare request body with correct structure
         const requestBody = {
-            task_lists: tasks.filter(t => t.trim()), // Filter out empty tasks
+            task_list: tasks.filter(t => t.trim()).join('\n'), // Filter out empty tasks
             agent_skills: agentSkills,
             global_skills: globalSkills,
-            steps: selectedSteps.map(s => s.id) // Extract step IDs
+            steps: selectedSteps.map(s => s.name) // Extract step IDs
         };
 
         console.log('Sending translation request:', requestBody);
