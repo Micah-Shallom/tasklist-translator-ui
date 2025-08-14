@@ -439,12 +439,6 @@ function renderResults(data) {
                     <div class="content"><pre>${escapeHtml(step.prompt)}</pre></div>
                 </div>
                 ` : ''}
-                ${step.llm_call !== undefined ? `
-                <div class="step-field">
-                    <label>LLM Call</label>
-                    <div class="content">${step.llm_call ? 'Yes' : 'No'}</div>
-                </div>
-                ` : ''}
             </div>
         `;
         processStepsContainer.appendChild(stepEl);
