@@ -227,36 +227,36 @@ async function showPromptVersions(promptName) {
   modal.style.display = "flex"
 
   try {
-    const response = await fetch(`${BASE_URL}/prompts/${encodeURIComponent(promptName)}`)
-    const data = await response.json()
-
-    console.log("[v0] API Response:", data) // Debug log to see actual response structure
-
-    if (response.ok && data.prompt_name && data.versions) {
-      currentPromptVersions = data
-      renderVersionsList(data.versions)
-
-      // Auto-select latest version (first in list since they're sorted by date desc)
-      if (data.versions.length > 0) {
-        selectVersion(data.versions[0])
+      const response = await fetch(`${BASE_URL}/prompts/${encodeURIComponent(promptName)}`)
+      const data = await response.json()
+  
+      console.log("[v0] API Response:", data) // Debug log to see actual response structure
+  
+      if (response.ok && data.data.prompt_name && data.data.versions) {
+        currentPromptVersions = data.data
+        renderVersionsList(data.data.versions)
+  
+        // Auto-select latest version (first in list since they're sorted by date desc)
+        if (data.data.versions.length > 0) {
+          selectVersion(data.data.versions[0])
+        }
+      } else {
+        console.log("[v0] Response not in expected format:", data) // Debug log
+        versionsList.innerHTML = `
+          <div style="padding: 20px; text-align: center; color: var(--accent-danger);">
+            Failed to load versions: ${data.message || "Unexpected response format"}
+          </div>
+        `
       }
-    } else {
-      console.log("[v0] Response not in expected format:", data) // Debug log
+    } catch (error) {
+      console.error("Error loading prompt versions:", error)
       versionsList.innerHTML = `
         <div style="padding: 20px; text-align: center; color: var(--accent-danger);">
-          Failed to load versions: ${data.message || "Unexpected response format"}
+          Error loading versions. Please try again.
         </div>
       `
     }
-  } catch (error) {
-    console.error("Error loading prompt versions:", error)
-    versionsList.innerHTML = `
-      <div style="padding: 20px; text-align: center; color: var(--accent-danger);">
-        Error loading versions. Please try again.
-      </div>
-    `
   }
-}
 
 function renderVersionsList(versions) {
   const versionsList = document.getElementById("versionsList")
@@ -515,7 +515,7 @@ async function performTranslation() {
       global_skills: globalSkills,
       steps: selectedSteps.map((step) => ({
         name: step.name,
-        version_id: step.version_id,
+        version: step.version,
       })),
     }
 
